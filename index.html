@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PisanoCrypt</title>
+  <link rel="manifest" href="manifest.json"/>
+  <style>
+    body {font-family:Arial;background:#0d1b2a;color:#00ff41;padding:20px;text-align:center;}
+    h1 {color:#00ff41;text-shadow:0 0 10px #00ff41;}
+    textarea,input{width:90%;padding:12px;margin:10px;background:#1b263b;color:#00ff41;border:2px solid #00ff41;border-radius:8px;}
+    button{background:#001f3f;color:#00ff41;padding:15px 30px;font-size:18px;border:2px solid #00ff41;border-radius:10px;cursor:pointer;box-shadow:0 0 15px #00ff4166;}
+    button:hover{background:#003366;}
+    #output{background:#1b263b;padding:15px;border:2px solid #00ff41;border-radius:8px;margin:20px;min-height:100px;}
+  </style>
+</head>
+<body>
+  <h1>PisanoCrypt</h1>
+  <p>Fibonacci + Pisano ile Şifreleme</p>
+  <textarea id="message" placeholder="Mesajını buraya yaz..." rows="4"></textarea><br/>
+  <input type="number" id="k" value="5" placeholder="Anahtar (k)"/><br/>
+  <input type="number" id="n" value="257" placeholder="Mod (n)"/><br/>
+  <button onclick="encrypt()">ŞİFRELE</button>
+  <button onclick="decrypt()">DEŞİFRELE</button>
+  <div id="output">Sonuç burada görünecek...</div>
+
+  <script>
+    function fibMod(max,mod){let f=[0,1];for(let i=2;i<=max;i++)f.push((f[i-1]+f[i-2])%mod);return f;}
+    function modInverse(a,m){let [g,x]=egcd(a,m);if(g!==1)return null;return(x%m+m)%m;function egcd(a,b){if(a===0)return[b,0,1];let[g,y,x]=egcd(b%a,a);return[g,x-Math.floor(b/a)*y,y];}}
+    function encrypt(){
+      const msg=document.getElementById("message").value;
+      const k=parseInt(document.getElementById("k").value);
+      const n=parseInt(document.getElementById("n").value);
+      const bytes=new TextEncoder().encode(msg);
+      const fib=fibMod(bytes.length+k+100,n);
+      let res=[];
+      for(let i=0;i<bytes.length;i++){
+        const f=fib[k+i];
+        if(f===0){alert("Bu k ile ters alınamıyor! Başka k dene.");return;}
+        res.push((bytes[i]*f)%n);
+      }
+      document.getElementById("output").innerText="Şifreli: "+res.join(", ");
+    }
+    function decrypt(){
+      const input=prompt("Şifreli metni (virgülle ayrılmış) yapıştır:");
+      if(!input)return;
+      const enc=input.split(",").map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
+      const k=parseInt(document.getElementById("k").value);
+      const n=parseInt(document.getElementById("n").value);
+      const fib=fibMod(enc.length+k+100,n);
+      let bytes=[];
+      for(let i=0;i<enc.length;i++){
+        const f=fib[k+i];
+        const inv=modInverse(f,n);
+        if(!inv){alert("Ters alınamıyor! Farklı k dene.");return;}
+        bytes.push((enc[i]*inv)%n);
+      }
+      const text=new TextDecoder().decode(new Uint8Array(bytes));
+      document.getElementById("output").innerText="Çözülen Mesaj: "+text;
+    }
+  </script>
+</body>
+</html>
